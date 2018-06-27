@@ -1,6 +1,5 @@
 _           = require "underscore"
 assert      = require "assert"
-{ Schema }  = require "mongoose"
 
 Connector  = require "../src"
 
@@ -20,12 +19,7 @@ connector = new Connector
 	options:
 		replicaSet: "rs0"
 
-testSchema = new Schema
-	field1:  type:   String
-	field2:  type: [ String ]
-,
-	timestamps: true
-
+testSchema = null
 
 describe "Mongo Connector Test", ->
 	describe "Start and Stop function", ->
@@ -45,7 +39,18 @@ describe "Mongo Connector Test", ->
 
 	describe "collections and models", ->
 		before (done) ->
-			connector.start done
+			connector.start (error) ->
+				return done error if error
+
+				{ Schema } = connector.connection.base
+
+				testSchema = new Schema
+					field1:  type:   String
+					field2:  type: [ String ]
+				,
+					timestamps: true
+
+				done()
 
 		after (done) ->
 			connector.stop done
@@ -53,17 +58,17 @@ describe "Mongo Connector Test", ->
 		it "should be possible to create models with connection and add documents to db", ->
 			connector.connection.model "TestModel", testSchema
 
-			(new connector.connection.models.TestModel field1: "what fffss...").save()
+			(new connector.models.TestModel field1: "what fffss...").save()
 
 		it "should be possible to create models with connection", ->
-			connector.connection.model "TestCollection", testSchema
+			modelName = "TestCollection"
+			connector.connection.model modelName, testSchema
 
-			assert.ok connector.connection.collections.testcollections, "did not have `testcollections` collection"
+			assert.ok connector.models[modelName], "did not have `#{modelName}` collection"
 
 		it "should be possible to create models with connection", (done) ->
-			connector.connection.model "TestChangeStream", testSchema
-
-			collectionName = "testchangestreams"
+			modelName = "TestChangeStream"
+			connector.connection.model modelName, testSchema
 
 			# With arbitray properties. Could be left out
 			id       = "STAY CONNECTED"
@@ -73,14 +78,44 @@ describe "Mongo Connector Test", ->
 					$and: [ "fullDocument.field1": $in: [ id ] ]
 			]
 
-			stop = ->
-				console.info "change stream stopped"
+			onError = (error) ->
+				console.error "change stream errored", error
+
+			onClose = ->
+				console.info "change stream closed"
 
 			onChange = ->
 				done()
 
-			connector.changeStream { pipeline, collectionName, options, onChange, stop }
+			cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
 
-			(new connector.connection.models.TestChangeStream field1: id).save()
+			assert.equal typeof cursor, "object", "should return cursor object"
+
+			(new connector.models.TestChangeStream field1: id).save()
 
 			return
+
+		it "should call onclose if cursor closes", (done) ->
+			modelName = "TestChangeStream2"
+			connector.connection.model modelName, testSchema
+
+			# With arbitray properties. Could be left out
+			id       = "STAY CONNECTED"
+			options  = fullDocument: "updateLookup"
+			pipeline = [
+				$match:
+					$and: [ "fullDocument.field1": $in: [ id ] ]
+			]
+
+			onError = (error) ->
+				console.error "change stream errored", error
+
+			onClose = ->
+				console.info "change stream closed"
+				done()
+
+			onChange = ->
+				done new Error "CHANGES!?"
+
+			cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
+			cursor.close()

@@ -35,35 +35,38 @@ class Connector
 			_.each [ "close", "error", "reconnected", "disconnected" ], (event) =>
 				@connection.on event, logReadyState.bind @, @connection, event
 
+			@models      = @connection.models
+
 			cb?()
 
-	changeStream: ({ onChange, collectionName, pipeline = [], options = {}, stop = -> }) =>
-		unless typeof collectionName is "string"
-			throw new Error "Must provide `changeStream` function with a `collectionName`"
+
+	changeStream: ({ onChange, modelName, pipeline = [], options = {}, onError, onClose }) =>
+		unless typeof modelName is "string"
+			throw new Error "Must provide `changeStream` function with a `modelName`"
 		unless typeof onChange is "function"
 			throw new Error "Must provide `changeStream` function with an `onChange` handler."
 
-		collection = @connection.collections[collectionName]
+		model = @connection.models[modelName]
 
-		debug "Setup #{collectionName} a change stream. Inspect pipeline:", inspect pipeline, depth: 10
+		throw new Error "Collection #{modelName} does not exist." unless model
 
-		cursor = collection.watch pipeline, options
+		_onError = (error) =>
+			return onError error if onError
+			@log.error "Change stream error for (#{modelName}): #{error}"
 
-		cursor
-			.on "change", onChange
-			.on "error", (error) =>
-				@log.error "Change stream error for (#{collectionName}): #{error}"
-				throw error
+		_onClose = =>
+			return onClose() if onClose
+			@log.error "Change stream closed for (#{modelName})."
 
-				# instead of throwing we could do this:
-				# cursor.close()
-				# setTimeout =>
-				# 	@changeStream: ({ pipeline, collectionName, onChange, stop }) =>
-				# , 1000
+		debug "Setup #{modelName} a change stream. Inspect pipeline:", inspect pipeline, depth: 10
 
-			.on "close", =>
-				@log.error "Change stream closed for (#{collectionName})."
-				stop?()
+		watch = model.watch pipeline, options
+			.on "change",  onChange
+			.on "error",  _onError
+			.on "close",  _onClose
+
+		# this is the native cursor
+		watch.driverChangeStream
 
 	stop: (cb) =>
 		return cb() unless @connection.readyState is 1
