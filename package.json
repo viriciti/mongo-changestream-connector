@@ -1,8 +1,8 @@
 {
   "name": "@tn-group/mongo-connector",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "scripts": {
-    "precommit": "if git-branch-is develop; then npm test; fi",
+    "precommit": "npm test",
     "start": "NODE_ENV=development nodemon src/runner.coffee",
     "test": "DEBUG=mongo-connector NODE_ENV=test nyc mocha",
     "compile": "coffee --output build --compile src"
