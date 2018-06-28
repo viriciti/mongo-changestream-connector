@@ -4,7 +4,10 @@ assert      = require "assert"
 Connector  = require "../src"
 
 connector = new Connector
-	database:  "test-mongo-connector"
+	database:     "test-mongo-connector"
+	options:       replicaSet: "rs0"
+	throwHappy:    true
+	poolSize:      50
 	hosts: [
 			host: "localhost"
 			port: 27021
@@ -15,9 +18,6 @@ connector = new Connector
 			host: "localhost"
 			port: 27023
 	]
-	poolSize: 50
-	options:
-		replicaSet: "rs0"
 
 testSchema = null
 
@@ -25,9 +25,11 @@ describe "Mongo Connector Test", ->
 	describe "Start and Stop function", ->
 		it "should start and stop for single host and port", (done) ->
 			conn = new Connector
-				database:  "test-mongo-connector-2"
-				host:      "localhost"
-				port:       27017
+				database:     "test-mongo-connector-2"
+				throwHappy:    true
+				poolSize:      1 # minimum is 5
+				host:         "localhost"
+				port:          27017
 
 			conn.start (error) ->
 				return done error if error
