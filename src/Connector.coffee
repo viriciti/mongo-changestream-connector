@@ -8,7 +8,7 @@ mongoose.Promise = global.Promise
 
 
 class Connector
-	constructor: ({ log, @options, host, port, @hosts, @database, @poolSize }) ->
+	constructor: ({ log, @options, host, port, @hosts, @database, @poolSize, @throwHappy }) ->
 		@log = log or (require "@tn-group/log") label: "mongo-connector"
 
 		@hosts    = [ { host, port } ]    if host and port
@@ -32,6 +32,8 @@ class Connector
 
 				@log.warn mssg
 
+				throw new Error "Happily throwing: #{mssg}" if @throwHappy and event in [ "error", "close" ]
+
 			_.each [ "close", "error", "reconnected", "disconnected" ], (event) =>
 				@connection.on event, logReadyState.bind @, @connection, event
 
@@ -48,7 +50,7 @@ class Connector
 
 		model = @connection.models[modelName]
 
-		throw new Error "Collection #{modelName} does not exist." unless model
+		throw new Error "Model #{modelName} does not exist." unless model
 
 		_onError = (error) =>
 			return onError error if onError
@@ -70,6 +72,8 @@ class Connector
 
 	stop: (cb) =>
 		return cb() unless @connection.readyState is 1
+
+		@connection.removeAllListeners [ "close" ] if @throwHappy
 
 		@connection.close (error) =>
 			return cb? error if error
