@@ -5,10 +5,10 @@ stages:
 
 compile:
   stage: compile
-  # artifacts:
-  #   paths:
-  #   - build
-  #   - node_modules
+  artifacts:
+    paths:
+    - build
+    - node_modules
   script:
     - npm install
     - npm run compile
