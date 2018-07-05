@@ -37,10 +37,9 @@ class Connector
 			_.each [ "close", "error", "reconnected", "disconnected" ], (event) =>
 				@connection.on event, logReadyState.bind @, @connection, event
 
-			@models      = @connection.models
+			@models = @connection.models
 
 			cb?()
-
 
 	changeStream: ({ onChange, modelName, pipeline = [], options = {}, onError, onClose }) =>
 		unless typeof modelName is "string"
@@ -81,5 +80,34 @@ class Connector
 			@log.info "Stopped mongo-connector"
 
 			cb?()
+
+	initReplset: (cb) =>
+		@log.warn "Don't init replica set in production!"
+
+		return cb() unless @options.replicaSet
+
+		{ MongoClient } = require "mongodb"
+
+		url = mongodbUri.format { @hosts, @database }
+
+		rsConfig =
+			_id : "rs0",
+			members: _.map @hosts, (host, i) ->
+				_id: i
+				host: "#{host.host}:#{host.port}"
+
+		MongoClient.connect url, (error, client) ->
+			return cb error if error
+
+			client.db("local").admin().replSetGetStatus (error, status) ->
+				return cb()     unless error
+				return cb error if error.code isnt 94
+
+				client.db("local").admin().command { replSetInitiate: rsConfig }, (error) ->
+					return cb error if error
+
+					setTimeout ->
+						cb()
+					, 10000
 
 module.exports = Connector

@@ -1,58 +1,37 @@
 _           = require "underscore"
+async       = require "async"
 assert      = require "assert"
+config      = require "config"
 
 Connector  = require "../src"
 
-connector = new Connector
-	database:     "test-mongo-connector"
-	options:       replicaSet: "rs0"
-	throwHappy:    true
-	poolSize:      50
-	hosts: [
-			host: "localhost"
-			port: 27021
-		,
-			host: "localhost"
-			port: 27022
-		,
-			host: "localhost"
-			port: 27023
-	]
-
-testSchema = null
 
 describe "Mongo Connector Test", ->
-	describe "Start and Stop function", ->
-		it "should start and stop for single host and port", (done) ->
-			conn = new Connector
-				database:     "test-mongo-connector-2"
-				throwHappy:    true
-				poolSize:      1 # minimum is 5
-				host:         "localhost"
-				port:          27017
-
-			conn.start (error) ->
-				return done error if error
-
-				conn.stop (error) ->
-					return done error if error
-
-					done()
+	connector  = new Connector config
+	testSchema = null
 
 	describe "collections and models", ->
+		@timeout 11000
+
 		before (done) ->
-			connector.start (error) ->
-				return done error if error
+			async.series [
+				(cb) ->
+					connector.initReplset cb
 
-				{ Schema } = connector.connection.base
+				(cb) ->
+					connector.start (error) ->
+						return cb error if error
 
-				testSchema = new Schema
-					field1:  type:   String
-					field2:  type: [ String ]
-				,
-					timestamps: true
+						{ Schema } = connector.connection.base
 
-				done()
+						testSchema = new Schema
+							field1:  type:   String
+							field2:  type: [ String ]
+						,
+							timestamps: true
+
+						cb()
+			], done
 
 		after (done) ->
 			connector.stop done

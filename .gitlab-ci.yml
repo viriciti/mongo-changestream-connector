@@ -1,6 +1,8 @@
+image: docker.viriciti.com/administration/builder-image:1.3.10
+
 stages:
   - compile
-  # - test
+  - test
   - publish
 
 compile:
@@ -15,14 +17,15 @@ compile:
   only:
     - tags
 
-# need replicaset
-# test:
-#   services:
-#     - mongo:3.6
-#   script:
-#     - npm test
-#   only:
-#     - tags
+test:
+  services:
+    - name: mongo
+      command: ["bash", "-c", 'echo "127.0.0.1  mongo" >> /etc/hosts; docker-entrypoint.sh --replSet rs0']
+  script:
+    - npm install
+    - npm test
+  only:
+    - tags
 
 release:
   stage: publish
