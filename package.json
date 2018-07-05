@@ -1,6 +1,6 @@
 {
   "name": "@tn-group/mongo-connector",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "scripts": {
     "precommit": "npm test",
     "start": "NODE_ENV=development nodemon src/runner.coffee",
