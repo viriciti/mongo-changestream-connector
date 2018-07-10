@@ -47,7 +47,7 @@ describe "Mongo Connector Test", ->
 
 			assert.ok connector.models[modelName], "did not have `#{modelName}` collection"
 
-		it "should be possible to create models with connection", (done) ->
+		it "should be possible to create models with connection and recieve `insert` changes", (done) ->
 			modelName = "TestChangeStream"
 			connector.connection.model modelName, testSchema
 
@@ -65,7 +65,9 @@ describe "Mongo Connector Test", ->
 			onClose = ->
 				console.info "change stream closed"
 
-			onChange = ->
+			onChange = (change) ->
+				assert.equal change.operationType, "insert"
+				cursor.close()
 				done()
 
 			cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
@@ -73,6 +75,41 @@ describe "Mongo Connector Test", ->
 			assert.equal typeof cursor, "object", "should return cursor object"
 
 			(new connector.models.TestChangeStream field1: id).save()
+
+			return
+
+		it "should recieve `delete` changes", (done) ->
+			modelName = "TestChangeStream"
+			connector.connection.model modelName, testSchema
+
+			# With arbitray properties. Could be left out
+			id       = "STAY CONNECTED"
+			options  = fullDocument: "updateLookup"
+			pipeline = []
+
+			onError = (error) ->
+				console.error "change stream errored", error
+
+			onClose = ->
+				console.info "change stream closed"
+
+			onChange = (change) ->
+				if change.operationType isnt "insert"
+					assert.equal change.operationType, "delete"
+					cursor.close()
+					done()
+
+			cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
+
+			assert.equal typeof cursor, "object", "should return cursor object"
+
+			item = new connector.models.TestChangeStream field1: id
+
+			item.save (error) ->
+				return done error if error
+
+				item.remove (error) ->
+					return done error if error
 
 			return
 

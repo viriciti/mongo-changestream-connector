@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "scripts": {
     "precommit": "npm test",
-    "start": "NODE_ENV=development nodemon src/runner.coffee",
     "test": "DEBUG=mongo-connector NODE_ENV=test nyc mocha",
     "compile": "coffee --output build --compile src"
   },
@@ -17,7 +16,6 @@
   },
   "author": "pim",
   "nyc": {
-    "check-coverage": false,
     "lines": 80,
     "functions": 80,
     "branches": 80,
