@@ -59,7 +59,7 @@ class Connector
 			return onClose() if onClose
 			@log.error "Change stream closed for (#{modelName})."
 
-		debug "Setup #{modelName} a change stream. Inspect pipeline:", inspect pipeline, depth: 10
+		debug "Setup a change stream for `#{modelName}`. Inspect pipeline:", inspect pipeline, depth: 10
 
 		watch = model.watch pipeline, options
 			.on "change",  onChange

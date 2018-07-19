@@ -78,6 +78,35 @@ describe "Mongo Connector Test", ->
 
 			return
 
+		it "should call onclose if cursor closes", (done) ->
+			modelName = "TestChangeStream2"
+			connector.connection.model modelName, testSchema
+
+			# With arbitray properties. Could be left out
+			id       = "STAY CONNECTED"
+			options  = fullDocument: "updateLookup"
+			pipeline = [
+				$match:
+					$and: [ "fullDocument.field1": $in: [ id ] ]
+			]
+
+			onError = (error) ->
+				console.error "change stream errored", error
+
+			onClose = ->
+				console.info "change stream closed"
+				done()
+
+			onChange = ->
+				done new Error "CHANGES!?"
+
+			cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
+			cursor.close()
+
+		# Delete changes are based on _id only, not on a field like `identity` or `chargestation`.
+		# Considering the currenct acl of the CS, delete changes can never be queried for.
+		# They are thus irrelevant.
+		# We leave the test here nonetheless for other use cases.
 		it "should recieve `delete` changes", (done) ->
 			modelName = "TestChangeStream"
 			connector.connection.model modelName, testSchema
@@ -112,28 +141,3 @@ describe "Mongo Connector Test", ->
 					return done error if error
 
 			return
-
-		it "should call onclose if cursor closes", (done) ->
-			modelName = "TestChangeStream2"
-			connector.connection.model modelName, testSchema
-
-			# With arbitray properties. Could be left out
-			id       = "STAY CONNECTED"
-			options  = fullDocument: "updateLookup"
-			pipeline = [
-				$match:
-					$and: [ "fullDocument.field1": $in: [ id ] ]
-			]
-
-			onError = (error) ->
-				console.error "change stream errored", error
-
-			onClose = ->
-				console.info "change stream closed"
-				done()
-
-			onChange = ->
-				done new Error "CHANGES!?"
-
-			cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
-			cursor.close()
