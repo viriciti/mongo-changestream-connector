@@ -1,5 +1,0 @@
-module.exports =
-	hosts: [
-			host: "localhost"
-			port: 27021
-	]
