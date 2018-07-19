@@ -1,6 +1,6 @@
 {
   "name": "@tn-group/mongo-connector",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "precommit": "npm test",
     "test": "DEBUG=mongo-connector NODE_ENV=test nyc mocha",
