@@ -1,5 +1,5 @@
 _               = require "underscore"
-debug           = require("debug") "mongo-connector"
+debug           = require("debug") "mongo-changestream-connector"
 mongodbUri      = require "mongodb-uri"
 mongoose        = require "mongoose"
 { inspect }     = require "util"
@@ -9,7 +9,7 @@ mongoose.Promise = global.Promise
 
 class Connector
 	constructor: ({ log, @options, host, port, @hosts, @database, @poolSize, @throwHappy }) ->
-		@log = log or (require "@tn-group/log") label: "mongo-connector"
+		@log = log or console
 
 		@hosts    = [ { host, port } ]    if host and port
 		@poolSize = 5                     if not @poolSize or @poolSize < 5
@@ -23,10 +23,10 @@ class Connector
 		@connection = mongoose.createConnection uri, { @poolSize }
 
 		@connection.once "connected", =>
-			@log.info "Mongo-connector connected to: #{uri}. Poolsize is #{@poolSize}"
+			@log.info "mongo-changestream-connector connected to: #{uri}. Poolsize is #{@poolSize}"
 
 			logReadyState = (conn, event, error) =>
-				mssg  = "Mongo-connector connection `#{event}`"
+				mssg  = "mongo-changestream-connector connection `#{event}`"
 				mssg += " during readystate #{conn.states[conn.readyState]}. " if conn.states
 				mssg += " Error: #{error}"                                     if error
 
@@ -77,7 +77,7 @@ class Connector
 		@connection.close (error) =>
 			return cb? error if error
 
-			@log.info "Stopped mongo-connector"
+			@log.info "Stopped mongo-changestream-connector"
 
 			cb?()
 
