@@ -1,3 +1,3 @@
-# MongoDB Mongoose Connector
+# Mongo Changestream Connector
 
-```npm i @tn-group/mongo-connector```
+```npm i mongo-changestream-connector```
