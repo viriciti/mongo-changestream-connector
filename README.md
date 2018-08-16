@@ -2,6 +2,11 @@
 
 ```npm i mongo-changestream-connector```
 
+### Connect and change streams with Mongoose
+
+- Make sure that mongoose (>= 5) is installed and supply the setting `useMongoose: true` to the `Connector` constructor.
+- Now, after using the mongoose connection to instantiate models, you can access all mongoose models with `Connector.models`. The reference to the native MongoDB with `Connector.db` will now not be available anymore.
+- Finally, instead of specifying `collectionName` in the `changeStream` method, specify `modelName`.
 
 ### Release a new version
 
