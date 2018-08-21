@@ -6,9 +6,10 @@ config      = require "config"
 Connector  = require "../src"
 
 
-describe "Mongoose tests", ->
+describe "Mongo Change Stream tests Mongoose", ->
 	testSchema = null
 	connector  = new Connector _.extend {}, config, useMongoose: true
+	modelName = "TestChangeStream"
 
 	before (done) ->
 		async.series [
@@ -28,101 +29,115 @@ describe "Mongoose tests", ->
 						timestamps: true
 
 					cb()
+
+			(cb) ->
+				connector.mongooseConnection.model modelName, testSchema
+				cb()
+
 		], done
 
 	after (done) ->
 		connector.stop done
 
 	it "should be possible to create models with connection", ->
-		modelName = "TestCollection"
-		connector.mongooseConnection.model modelName, testSchema
+		connector.mongooseConnection.model "TestCollection", testSchema
 
-		assert.ok connector.models[modelName], "did not have `#{modelName}` model"
+		assert.ok connector.models["TestCollection"], "did not have `TestCollection` model"
 
-	it "should be possible to add documents to db", ->
+	it "should be possible to add documents to db", (done) ->
 		connector.mongooseConnection.model "TestModel", testSchema
 
-		(new connector.models.TestModel field1: "what fffss...").save()
+		(new connector.models.TestModel field1: "what fffss...").save done
 
-	it "should be possible to create models with connection and recieve `insert` changes", (done) ->
-		modelName = "TestChangeStream"
-		connector.mongooseConnection.model modelName, testSchema
+	describe "Change Stream Method", ->
+		it "should return Changestream cursor", (done) ->
+			onChange = ->
 
-		# With arbitray properties. Could be left out
-		value    = "STAY CONNECTED"
-		pipeline = [
-			$match:
-				$and: [ "fullDocument.field1": $in: [ value ] ]
-		]
+			cursor = connector.changeStream { modelName, onChange }
 
-		onError = (error) ->
-			console.error "change stream errored", error
+			assert.equal cursor.constructor.name, "ChangeStream"
 
-		onClose = ->
-			console.info "change stream closed"
+			cursor.close done
 
-		onChange = (change) ->
-			assert.equal change.operationType, "insert"
-			cursor.close()
-			done()
+		it "should be possible to create models with connection and receive `insert` changes", (done) ->
+			value = "STAY CONNECTED"
 
-		cursor = connector.changeStream { pipeline, modelName, onChange, onError, onClose }
+			onChange = (change) ->
+				assert.equal change.operationType, "insert"
+				cursor.close done
 
-		assert.equal typeof cursor, "object", "should return cursor object"
+			cursor = connector.changeStream { modelName, onChange }
 
-		(new connector.models.TestChangeStream field1: value).save()
+			setImmediate ->
+				(new connector.models[modelName] field1: value).save()
 
-		return
+		it "should be possible to use pipelines", (done) ->
+			value1    = "STAY CONNECTED"
+			value2    = "REALLY STAY CONNECTED"
+			pipeline = [
+				$match:
+					$and: [ "fullDocument.field1": $in: [ value1 ] ]
+			]
 
-	it "should call onclose if cursor closes", (done) ->
-		modelName = "TestChangeStream2"
-		connector.mongooseConnection.model modelName, testSchema
+			onChange = (change) ->
+				assert.equal change.fullDocument.field1, value1
+				cursor.close done
 
-		onError = (error) ->
-			console.error "change stream errored", error
+			cursor = connector.changeStream { pipeline, modelName, onChange }
 
-		onClose = ->
-			console.info "change stream closed"
-			done()
+			setImmediate ->
+				(new connector.models[modelName] field1: value2).save()
 
-		onChange = ->
-			done new Error "CHANGES!?"
+			setImmediate ->
+				(new connector.models[modelName] field1: value1).save()
 
-		cursor = connector.changeStream { modelName, onChange, onError, onClose }
-		cursor.close()
+		it "should call onclose if cursor closes", (done) ->
+			onError = (error) ->
+				console.error "change stream errored", error
 
-	# Delete changes are based on _id only, not on a field like `identity` `name`.
-	it "should recieve `delete` changes", (done) ->
-		modelName = "TestChangeStream"
-		connector.mongooseConnection.model modelName, testSchema
-
-		# With arbitray properties. Could be left out
-		value    = "STAY CONNECTED"
-		options  = fullDocument: "updateLookup"
-		pipeline = []
-
-		onError = (error) ->
-			console.error "change stream errored", error
-
-		onClose = ->
-			console.info "change stream closed"
-
-		onChange = (change) ->
-			if change.operationType isnt "insert"
-				assert.equal change.operationType, "delete"
-				cursor.close()
+			onClose = ->
+				console.info "change stream closed"
 				done()
 
-		cursor = connector.changeStream { pipeline, modelName, options, onChange, onError, onClose }
+			onChange = ->
+				done new Error "CHANGES!?"
 
-		assert.equal typeof cursor, "object", "should return cursor object"
+			cursor = connector.changeStream { modelName, onChange, onError, onClose }
+			cursor.close()
 
-		item = new connector.models.TestChangeStream field1: value
+		# Delete changes are based on _id only, not on a field like `identity` `name`.
+		it "should recieve `delete` changes", (done) ->
+			value    = "STAY CONNECTED"
 
-		item.save (error) ->
-			return done error if error
+			onChange = (change) ->
+				return if change.operationType is "insert"
+				assert.equal change.operationType, "delete"
+				cursor.close done
 
-			item.remove (error) ->
-				return done error if error
+			cursor = connector.changeStream { modelName, onChange }
 
-		return
+			item = new connector.models[modelName] field1: value
+
+			setImmediate ->
+				item.save (error) ->
+					return done error if error
+
+					item.remove (error) ->
+						return done error if error
+
+		###########################################
+		# This test don't work yet because change somehow always contains fullDocument
+		#############################
+
+		# it "should be possible to use options (fullDocument)", (done) ->
+		# 	value    = "STAY CONNECTED"
+		# 	options  = fullDocument: "default"
+
+		# 	onChange = (change) ->
+		# 		assert.ok not change.fullDocument
+		# 		cursor.close done
+
+		# 	cursor = connector.changeStream { options, modelName, onChange }
+
+		# 	setImmediate ->
+		# 		(new connector.models[modelName] field1: value).save()

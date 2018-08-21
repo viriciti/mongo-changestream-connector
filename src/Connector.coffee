@@ -1,19 +1,21 @@
-_               = require "underscore"
-debug           = require("debug") "mongo-changestream-connector"
-mongodbUri      = require "mongodb-uri"
-{ inspect }     = require "util"
+_                  = require "underscore"
+debug              = require("debug") "mongo-changestream-connector"
+mongodbUri         = require "mongodb-uri"
+{ inspect }        = require "util"
+{ MongoClient }    = require "mongodb"
 
-{ debugLogger }      = require "./lib"
+{ defaultLogger }  = require "./lib"
 
 
 class Connector
 	constructor: (args) ->
 		{ log, @options = {}, host, port, @hosts, @database, @poolSize, @throwHappy, @useMongoose } = args
 
-		@log = log or debugLogger
+		@log = log or defaultLogger "mongo-changestream-connector"
 
-		@hosts    = [ { host, port } ] if host and port
-		@poolSize = 5                  if not @poolSize or @poolSize < 5
+		@mongo_or_mongoose = if @useMongoose then "Mongoose" else "MongoDB"
+		@hosts             = [ { host, port } ] if host and port
+		@options.poolSize  = 5                  if not @options.poolSize or @options.poolSize < 5
 
 		throw new Error "hosts must be provided"       unless Array.isArray @hosts
 		throw new Error "database must be provided"    unless typeof @database is "string"
@@ -25,17 +27,17 @@ class Connector
 				throw new Error "Mongoose must be installed!"
 
 	start: (cb) =>
+		uri = mongodbUri.format { @hosts, @database, @options }
+
 		if @useMongoose
 			mongoose = require "mongoose"
 
 			mongoose.Promise = global.Promise
 
-			uri = mongodbUri.format { @hosts, @database, @options }
+			@mongooseConnection = mongoose.createConnection uri
 
-			@mongooseConnection = mongoose.createConnection uri, { @poolSize }
-
-			@mongooseConnection.once "connected", =>
-				@log.info "Mongoose connection to: #{uri}. Poolsize is #{@poolSize}."
+			return @mongooseConnection.once "connected", =>
+				@log.info "Mongoose connection to: #{uri}."
 
 				logReadyState = (conn, event, error) =>
 					mssg  = "mongo-changestream-connector connection `#{event}`"
@@ -53,20 +55,15 @@ class Connector
 
 				cb?()
 
-		else
-			{ MongoClient } = require "mongodb"
+		MongoClient.connect uri, (error, client) =>
+			return cb? error if error
 
-			uri = mongodbUri.format { @hosts, @database, @options }
+			@log.info "Mongo connection to: #{uri}."
 
-			MongoClient.connect uri, { @poolSize }, (error, client) =>
-				return cb? error if error
+			@mongoClient = client
+			@db          = client.db()
 
-				@log.info "Mongo connection to: #{uri}. Poolsize is #{@poolSize}."
-
-				@mongoClient = client
-				@db          = client.db()
-
-				cb?()
+			cb?()
 
 	stop: (cb) =>
 		if @useMongoose
@@ -108,13 +105,14 @@ class Connector
 
 		_onError = (error) =>
 			return onError error if onError
-			@log.error "Change stream error for (#{name}): #{error}"
+			@log.error "#{@mongo_or_mongoose} Change stream error for (#{name}): #{error}"
 
 		_onClose = =>
 			return onClose() if onClose
-			@log.error "Change stream closed for (#{name})."
+			@log.error "#{@mongo_or_mongoose} Change stream closed for (#{name})."
 
-		debug "Setup a change stream for `#{name}`. Inspect pipeline:", inspect pipeline, depth: 10
+		debug "Setup a #{@mongo_or_mongoose} change stream for `#{name}`.
+		 Inspect pipeline:", inspect pipeline, depth: 10
 
 		watch = collection.watch pipeline, options
 			.on "change",  onChange
@@ -127,8 +125,6 @@ class Connector
 		@log.warn "Don't init replica set in production!"
 
 		throw new Error "Need `replicaSet` option" unless @options.replicaSet
-
-		{ MongoClient } = require "mongodb"
 
 		url = mongodbUri.format { @hosts, @database }
 
@@ -143,11 +139,15 @@ class Connector
 		MongoClient.connect url, (error, client) ->
 			return cb error if error
 
-			client.db("local").admin().replSetGetStatus (error, status) ->
+			admin = client
+				.db "local"
+				.admin()
+
+			admin.replSetGetStatus (error, status) ->
 				return cb()     unless error
 				return cb error if error.code isnt 94
 
-				client.db("local").admin().command { replSetInitiate: rsConfig }, (error) ->
+				admin.command replSetInitiate: rsConfig, (error) ->
 					return cb error if error
 
 					# Wait for initialisation to be done
