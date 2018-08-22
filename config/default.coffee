@@ -1,5 +1,6 @@
 module.exports =
 	database:      "test-mongo-connector"
-	options:       replicaSet: "rs0"
 	throwHappy:    true
-	poolSize:      50
+	options:
+		replicaSet:       "rs0"
+		poolSize:          50

@@ -14,12 +14,14 @@
   ],
   "license": "MIT",
   "readmeFilename": "README.md",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": {
-    "precommit": "npm test",
-    "test": "DEBUG=mongo-changestream-connector NODE_ENV=test nyc mocha",
+    "test": "NODE_ENV=test nyc mocha -r coffee-script/register test/**/*.coffee -r coffee-coverage/register-istanbul --exit",
+    "tests": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee test/**/*.coffee",
+    "test-mongo": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee ./test/test_Mongo.coffee",
+    "test-mongoose": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee ./test/test_Mongoose.coffee -w",
     "compile": "coffee --output build --compile src",
-    "test-release": "npm install; npm run compile; npm test",
+    "release-test": "npm install; npm run compile; npm test",
     "release": "npm install; npm run compile; npm test; npm publish"
   },
   "main": "./build/index.js",
@@ -30,7 +32,6 @@
     "type": "git",
     "url": "git@github.com:viriciti/mongo-changestream-connector.git"
   },
-  "author": "pim",
   "nyc": {
     "lines": 80,
     "functions": 80,
@@ -47,16 +48,20 @@
       "test.coffee"
     ]
   },
+  "optionalDependencies": {
+    "mongoose": "5.2.8"
+  },
   "dependencies": {
-    "async": "^2.6.1",
     "config": "^1.30.0",
     "debug": "^3.1.0",
     "mongodb": "^3.1.1",
     "mongodb-uri": "^0.9.7",
-    "mongoose": "^5.2.4",
-    "underscore": "^1.9.1"
+    "underscore": "^1.9.1",
+    "winston": "^3.0.0"
   },
   "devDependencies": {
+    "async": "^2.6.1",
+    "mongoose": "5.2.8",
     "coffee-coverage": "^3.0.0",
     "coffee-script": "^1.12.7",
     "coffeescope2": "^0.5.1",
