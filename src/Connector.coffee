@@ -85,23 +85,23 @@ class Connector
 			cb?()
 
 	changeStream: (args) =>
-		{ onChange, modelName, collectionName, pipeline = [], options = {}, onError, onClose } = args
+		{ onChange, model, collection, pipeline = [], options = {}, onError, onClose } = args
 
-		name = if @useMongoose then modelName else collectionName
+		name = if @useMongoose then model else collection
 
 		unless typeof name is "string"
 			throw new Error "Must provide `changeStream` function with a
-			 `#{if @useMongoose then "modelName" else "collectionName"}`"
+			 `#{if @useMongoose then "model" else "collection"}`"
 		unless typeof onChange is "function"
 			throw new Error "Must provide `changeStream` function with an `onChange` handler."
 
-		collection =
+		coll =
 			if @useMongoose
 			then @mongooseConnection.models[name]
 			else @db.collection name
 
 		# This can only happen in the case of Mongoose models
-		throw new Error "Model #{name} does not exist." unless collection
+		throw new Error "Model #{name} does not exist." unless coll
 
 		_onError = (error) =>
 			return onError error if onError
@@ -114,7 +114,7 @@ class Connector
 		debug "Setup a #{@mongo_or_mongoose} change stream for `#{name}`.
 		 Inspect pipeline:", inspect pipeline, depth: 10
 
-		watch = collection.watch pipeline, options
+		watch = coll.watch pipeline, options
 			.on "change",  onChange
 			.on "error",  _onError
 			.on "close",  _onClose

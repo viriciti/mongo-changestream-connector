@@ -53,7 +53,7 @@ describe "Mongo Change Stream tests Mongoose", ->
 		it "should return Changestream cursor", (done) ->
 			onChange = ->
 
-			cursor = connector.changeStream { modelName, onChange }
+			cursor = connector.changeStream { model: modelName, onChange }
 
 			assert.equal cursor.constructor.name, "ChangeStream"
 
@@ -66,7 +66,7 @@ describe "Mongo Change Stream tests Mongoose", ->
 				assert.equal change.operationType, "insert"
 				cursor.close done
 
-			cursor = connector.changeStream { modelName, onChange }
+			cursor = connector.changeStream { model: modelName, onChange }
 
 			setImmediate ->
 				(new connector.models[modelName] field1: value).save()
@@ -83,7 +83,7 @@ describe "Mongo Change Stream tests Mongoose", ->
 				assert.equal change.fullDocument.field1, value1
 				cursor.close done
 
-			cursor = connector.changeStream { pipeline, modelName, onChange }
+			cursor = connector.changeStream { pipeline, model: modelName, onChange }
 
 			setImmediate ->
 				(new connector.models[modelName] field1: value2).save()
@@ -102,7 +102,7 @@ describe "Mongo Change Stream tests Mongoose", ->
 			onChange = ->
 				done new Error "CHANGES!?"
 
-			cursor = connector.changeStream { modelName, onChange, onError, onClose }
+			cursor = connector.changeStream { model: modelName, onChange, onError, onClose }
 			cursor.close()
 
 		# Delete changes are based on _id only, not on a field like `identity` `name`.
@@ -114,7 +114,7 @@ describe "Mongo Change Stream tests Mongoose", ->
 				assert.equal change.operationType, "delete"
 				cursor.close done
 
-			cursor = connector.changeStream { modelName, onChange }
+			cursor = connector.changeStream { model: modelName, onChange }
 
 			item = new connector.models[modelName] field1: value
 
@@ -137,7 +137,7 @@ describe "Mongo Change Stream tests Mongoose", ->
 		# 		assert.ok not change.fullDocument
 		# 		cursor.close done
 
-		# 	cursor = connector.changeStream { options, modelName, onChange }
+		# 	cursor = connector.changeStream { options, model: modelName, onChange }
 
 		# 	setImmediate ->
 		# 		(new connector.models[modelName] field1: value).save()

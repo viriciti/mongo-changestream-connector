@@ -40,7 +40,7 @@ describe "Mongo Change Stream tests MongoDB", ->
 		it "should return Changestream cursor", (done) ->
 			onChange = ->
 
-			cursor = connector.changeStream { collectionName, onChange }
+			cursor = connector.changeStream { collection: collectionName, onChange }
 
 			assert.equal cursor.constructor.name, "ChangeStream"
 
@@ -54,7 +54,7 @@ describe "Mongo Change Stream tests MongoDB", ->
 				assert.equal change.operationType, "insert"
 				cursor.close done
 
-			cursor = connector.changeStream { collectionName, onChange }
+			cursor = connector.changeStream { collection: collectionName, onChange }
 
 			setImmediate ->
 				collection.insertOne { field1: value }, (error, res) ->
@@ -75,5 +75,5 @@ describe "Mongo Change Stream tests MongoDB", ->
 			onChange = ->
 				done new Error "CHANGES!?"
 
-			cursor = connector.changeStream { collectionName, onChange, onError, onClose }
+			cursor = connector.changeStream { collection: collectionName, onChange, onError, onClose }
 			cursor.close()
