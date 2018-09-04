@@ -36,8 +36,10 @@ class Connector
 
 			@mongooseConnection = mongoose.createConnection uri
 
+			@log.info "Mongoose connecting to: #{uri}."
+
 			return @mongooseConnection.once "connected", =>
-				@log.info "Mongoose connection to: #{uri}."
+				@log.info "Mongoose connected"
 
 				logReadyState = (conn, event, error) =>
 					mssg  = "mongo-changestream-connector connection `#{event}`"
@@ -55,10 +57,12 @@ class Connector
 
 				cb?()
 
+		@log.info "Mongo connecting to: #{uri}"
+
 		MongoClient.connect uri, (error, client) =>
 			return cb? error if error
 
-			@log.info "Mongo connection to: #{uri}."
+			@log.info "Mongo connected"
 
 			@mongoClient = client
 			@db          = client.db()
