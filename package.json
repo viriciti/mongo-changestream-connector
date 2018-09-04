@@ -1,6 +1,9 @@
 {
   "name": "mongo-changestream-connector",
+  "version": "1.0.1",
   "homepage": "https://github.com/viriciti/mongo-changestream-connector",
+  "license": "MIT",
+  "readmeFilename": "README.md",
   "keywords": [
     "mongo",
     "mongodb",
@@ -12,9 +15,6 @@
     "change-streams",
     "change-stream"
   ],
-  "license": "MIT",
-  "readmeFilename": "README.md",
-  "version": "1.0.0",
   "scripts": {
     "test": "NODE_ENV=test nyc mocha -r coffee-script/register test/**/*.coffee -r coffee-coverage/register-istanbul --exit",
     "tests": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee test/**/*.coffee",
