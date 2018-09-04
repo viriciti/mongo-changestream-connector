@@ -3,6 +3,8 @@
 ## Description
 Connect and change streams with Mongoose
 
+This module is created for [Mongo Live Server](https://www.npmjs.com/package/mongo-live-server) 
+
 
 ## How to install
 
