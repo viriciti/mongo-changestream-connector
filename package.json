@@ -16,10 +16,10 @@
     "change-stream"
   ],
   "scripts": {
-    "test": "NODE_ENV=test nyc mocha -r coffee-script/register test/**/*.coffee -r coffee-coverage/register-istanbul --exit",
-    "tests": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee test/**/*.coffee",
-    "test-mongo": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee ./test/test_Mongo.coffee",
-    "test-mongoose": "NODE_ENV=test mocha -r coffee-script/register -w --watch-extensions coffee ./test/test_Mongoose.coffee -w",
+    "test": "NODE_ENV=test nyc mocha -r coffeescript/register test/**/*.coffee -r coffee-coverage/register-istanbul --exit",
+    "tests": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee test/**/*.coffee",
+    "test-mongo": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee ./test/test_Mongo.coffee",
+    "test-mongoose": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee ./test/test_Mongoose.coffee -w",
     "compile": "coffee --output build --compile src",
     "release-test": "npm install; npm run compile; npm test",
     "release": "npm install; npm run compile; npm test; npm publish"
@@ -33,6 +33,7 @@
     "url": "git@github.com:viriciti/mongo-changestream-connector.git"
   },
   "nyc": {
+    "extension": ".coffee",
     "lines": 80,
     "functions": 80,
     "branches": 80,
@@ -52,21 +53,21 @@
     "mongoose": "5.2.8"
   },
   "dependencies": {
-    "config": "^1.30.0",
+    "config": "^2.0.1",
     "debug": "^3.1.0",
-    "mongodb": "^3.1.1",
+    "mongodb": "^3.1.4",
     "mongodb-uri": "^0.9.7",
+    "nyc": "^13.0.1",
     "underscore": "^1.9.1",
-    "winston": "^3.0.0"
+    "winston": "^3.1.0"
   },
   "devDependencies": {
     "async": "^2.6.1",
     "mongoose": "5.2.8",
     "coffee-coverage": "^3.0.0",
-    "coffee-script": "^1.12.7",
     "coffeescope2": "^0.5.1",
+    "coffeescript": "^2.3.1",
     "husky": "^0.14.3",
-    "mocha": "^5.2.0",
-    "nyc": "^12.0.2"
+    "mocha": "^5.2.0"
   }
 }
