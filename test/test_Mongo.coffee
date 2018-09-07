@@ -13,8 +13,6 @@ describe "Mongo Change Stream tests MongoDB", ->
 	collection     = null
 
 	before (done) ->
-		@timeout 6000
-
 		async.series [
 			(cb) ->
 				connector.initReplset cb
