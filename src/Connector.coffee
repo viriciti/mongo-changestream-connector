@@ -9,7 +9,7 @@ mongodbUri         = require "mongodb-uri"
 
 class Connector
 	constructor: (args) ->
-		{ log, @options = {}, host, port, @hosts, @database, @poolSize, @throwHappy, @useMongoose } = args
+		{ log, @options = {}, host, port, @hosts, @database, @throwHappy, @useMongoose } = args
 
 		@log = log or defaultLogger "mongo-changestream-connector"
 
