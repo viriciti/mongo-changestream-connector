@@ -13,8 +13,6 @@ describe "Mongo Change Stream tests MongoDB", ->
 	collection     = null
 
 	before (done) ->
-		@timeout 6000
-
 		async.series [
 			(cb) ->
 				connector.initReplset cb
@@ -66,10 +64,9 @@ describe "Mongo Change Stream tests MongoDB", ->
 			collection = connector.db.collection collectionName
 
 			onError = (error) ->
-				console.error "change stream errored", error
+				done error
 
 			onClose = ->
-				console.info "change stream closed"
 				done()
 
 			onChange = ->
@@ -77,3 +74,4 @@ describe "Mongo Change Stream tests MongoDB", ->
 
 			cursor = connector.changeStream { collection: collectionName, onChange, onError, onClose }
 			cursor.close()
+			return
