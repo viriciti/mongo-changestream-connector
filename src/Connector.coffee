@@ -91,6 +91,10 @@ class Connector
 	changeStream: (args) =>
 		{ onChange, model, collection, pipeline = [], options = {}, onError, onClose } = args
 
+		oncedOnclose = if onClose then _.once (endedOrClosed) =>
+			@log.error "#{@mongo_or_mongoose} Change stream #{endedOrClosed} for (#{name})."
+			onClose()
+
 		name = if @useMongoose then model else collection
 
 		unless typeof name is "string"
@@ -112,8 +116,14 @@ class Connector
 			@log.error "#{@mongo_or_mongoose} Change stream error for (#{name}): #{error}"
 
 		_onClose = =>
-			return onClose() if onClose
-			@log.error "#{@mongo_or_mongoose} Change stream closed for (#{name})."
+			if oncedOnclose
+				return oncedOnclose "closed"
+			debug "#{@mongo_or_mongoose} Change stream closed for (#{name})."
+
+		_onEnd = =>
+			if oncedOnclose
+				return oncedOnclose "ended"
+			debug "#{@mongo_or_mongoose} Change stream ended for (#{name})."
 
 		debug "Setup a #{@mongo_or_mongoose} change stream for `#{name}`.
 		 Inspect pipeline:", inspect pipeline, depth: 10
@@ -122,6 +132,7 @@ class Connector
 			.on "change",  onChange
 			.on "error",  _onError
 			.on "close",  _onClose
+			.on "end",    _onEnd
 
 		return if @useMongoose then watch.driverChangeStream else watch
 

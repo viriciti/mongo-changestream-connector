@@ -93,10 +93,9 @@ describe "Mongo Change Stream tests Mongoose", ->
 
 		it "should call onclose if cursor closes", (done) ->
 			onError = (error) ->
-				console.error "change stream errored", error
+				done error
 
 			onClose = ->
-				console.info "change stream closed"
 				done()
 
 			onChange = ->
