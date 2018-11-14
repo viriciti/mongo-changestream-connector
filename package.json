@@ -1,6 +1,6 @@
 {
   "name": "mongo-changestream-connector",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "homepage": "https://github.com/viriciti/mongo-changestream-connector",
   "license": "MIT",
   "readmeFilename": "README.md",
@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "test": "NODE_ENV=test nyc mocha -r coffeescript/register test/**/*.coffee -r coffee-coverage/register-istanbul --exit",
-    "tests": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee test/**/*.coffee",
+    "tests": "NODE_ENV=test nodemon -e coffee --exec \"mocha -r coffeescript/register test/*.coffee\"",
     "test-mongo": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee ./test/test_Mongo.coffee",
     "test-mongoose": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee ./test/test_Mongoose.coffee -w",
     "compile": "coffee --output build --compile src",
