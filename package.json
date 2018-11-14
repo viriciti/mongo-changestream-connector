@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "test": "NODE_ENV=test nyc mocha -r coffeescript/register test/**/*.coffee -r coffee-coverage/register-istanbul --exit",
-    "tests": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee test/**/*.coffee",
+    "tests": "NODE_ENV=test nodemon -e coffee --exec \"mocha -r coffeescript/register test/*.coffee\"",
     "test-mongo": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee ./test/test_Mongo.coffee",
     "test-mongoose": "NODE_ENV=test mocha -r coffeescript/register -w --watch-extensions coffee ./test/test_Mongoose.coffee -w",
     "compile": "coffee --output build --compile src",
