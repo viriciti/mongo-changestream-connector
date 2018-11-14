@@ -1,6 +1,6 @@
 {
   "name": "mongo-changestream-connector",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "homepage": "https://github.com/viriciti/mongo-changestream-connector",
   "license": "MIT",
   "readmeFilename": "README.md",
