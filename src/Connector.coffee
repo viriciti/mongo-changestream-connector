@@ -89,11 +89,7 @@ class Connector
 			cb?()
 
 	changeStream: (args) =>
-		{ onChange, model, collection, pipeline = [], options = {}, onError, onClose } = args
-
-		oncedOnclose = if onClose then _.once (endedOrClosed) =>
-			@log.error "#{@mongo_or_mongoose} Change stream #{endedOrClosed} for (#{name})."
-			onClose()
+		{ onChange, model, collection, pipeline = [], options = {}, onError, onClose, onEnd } = args
 
 		name = if @useMongoose then model else collection
 
@@ -116,14 +112,12 @@ class Connector
 			@log.error "#{@mongo_or_mongoose} Change stream error for (#{name}): #{error}"
 
 		_onClose = =>
-			if oncedOnclose
-				return oncedOnclose "closed"
-			debug "#{@mongo_or_mongoose} Change stream closed for (#{name})."
+			return onClose() if onClose
+			@log.error "#{@mongo_or_mongoose} Change stream for (#{name}) closed."
 
 		_onEnd = =>
-			if oncedOnclose
-				return oncedOnclose "ended"
-			debug "#{@mongo_or_mongoose} Change stream ended for (#{name})."
+			return onEnd() if onEnd
+			@log.error "#{@mongo_or_mongoose} Change stream for (#{name}) ended."
 
 		debug "Setup a #{@mongo_or_mongoose} change stream for `#{name}`.
 		 Inspect pipeline:", inspect pipeline, depth: 10
