@@ -109,16 +109,16 @@ class Connector
 
 		_onError = (error) =>
 			return onError error if onError
-			@log.error "#{@mongo_or_mongoose} Change stream error for (#{name}): #{error}"
+			@log.error "#{@mongo_or_mongoose} Change stream error for `#{name}`: #{error}"
 
 		_onClose = =>
 			return onClose() if onClose
-			@log.info "#{@mongo_or_mongoose} Change stream for (#{name}) closed."
+			@log.info "#{@mongo_or_mongoose} Change stream for `#{name}` closed."
 
 		# end is called when there is no more data, close is called once when the stream really stops
 		_onEnd = =>
 			return onEnd() if onEnd
-			@log.info "#{@mongo_or_mongoose} Change stream for (#{name}) ended."
+			@log.info "#{@mongo_or_mongoose} Change stream for `#{name}` ended."
 
 		debug "Setup a #{@mongo_or_mongoose} change stream for `#{name}`.
 		 Inspect pipeline:", inspect pipeline, depth: 10
