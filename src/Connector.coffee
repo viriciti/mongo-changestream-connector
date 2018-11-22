@@ -16,6 +16,7 @@ class Connector
 		@mongo_or_mongoose = if @useMongoose then "Mongoose" else "MongoDB"
 		@hosts             = [ { host, port } ] if host and port
 		@options.poolSize  = 5                  if not @options.poolSize or @options.poolSize < 5
+		@stopping          = false
 
 		throw new Error "hosts must be provided"       unless Array.isArray @hosts
 		throw new Error "database must be provided"    unless typeof @database is "string"
@@ -42,6 +43,8 @@ class Connector
 				@log.info "Mongoose connected"
 
 				logReadyState = (conn, event, error) =>
+					return if @stopping
+
 					mssg  = "mongo-changestream-connector connection `#{event}`"
 					mssg += " during readystate #{conn.states[conn.readyState]}. " if conn.states
 					mssg += " Error: #{error}"                                     if error
@@ -70,6 +73,8 @@ class Connector
 			cb?()
 
 	stop: (cb) =>
+		@stopping = true
+
 		if @useMongoose
 			return cb() unless @mongooseConnection.readyState is 1
 
@@ -85,11 +90,22 @@ class Connector
 			return cb? error if error
 
 			@log.info "Stopped Mongo Changestream Connector"
+			@stopping = false
 
 			cb?()
 
 	changeStream: (args) =>
-		{ onChange, model, collection, pipeline = [], options = {}, onError, onClose, onEnd } = args
+		{
+			onChange
+			model
+			streamId
+			collection
+			pipeline = []
+			options = {}
+			onError
+			onClose
+			onEnd
+		} = args
 
 		name = if @useMongoose then model else collection
 
@@ -108,17 +124,30 @@ class Connector
 		throw new Error "Model #{name} does not exist." unless coll
 
 		_onError = (error) =>
-			return onError error if onError
-			@log.error "#{@mongo_or_mongoose} Change stream error for `#{name}`: #{error}"
+			mssg = "#{@mongo_or_mongoose} Change stream error for `#{name}`."
+			mssg += " Connection id: #{streamId}" if streamId
+			mssg += error.message
 
-		_onClose = =>
-			return onClose() if onClose
-			@log.info "#{@mongo_or_mongoose} Change stream for `#{name}` closed."
+			@log.error mssg
+			
+			onError error if onError
 
 		# end is called when there is no more data, close is called once when the stream really stops
 		_onEnd = =>
-			return onEnd() if onEnd
-			@log.info "#{@mongo_or_mongoose} Change stream for `#{name}` ended."
+			mssg = "#{@mongo_or_mongoose} Change stream for `#{name}` ended."
+			mssg += " Connection id: #{streamId}" if streamId
+			
+			@log.info mssg
+			
+			onEnd() if onEnd
+
+		_onClose = =>
+			mssg = "#{@mongo_or_mongoose} Change stream for `#{name}` closed."
+			mssg += " Connection id: #{streamId}" if streamId
+			
+			@log.info mssg
+			
+			onClose() if onClose
 
 		debug "Setup a #{@mongo_or_mongoose} change stream for `#{name}`.
 		 Inspect pipeline:", inspect pipeline, depth: 10
@@ -126,13 +155,13 @@ class Connector
 		watch = coll.watch pipeline, options
 			.on "change",  onChange
 			.on "error",  _onError
-			.on "close",  _onClose
 			.on "end",    _onEnd
+			.on "close",  _onClose
 
 		return if @useMongoose then watch.driverChangeStream else watch
 
 	initReplset: (cb) =>
-		@log.warn "Don't init replica set in production!"
+		@log.info "Initiating replica set. (don't do this in production!)"
 
 		throw new Error "Need `replicaSet` option" unless @options.replicaSet
 
