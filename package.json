@@ -46,7 +46,7 @@
       "src/runner.coffee",
       "config/production.coffee",
       "**/index.coffee",
-      "test.coffee"
+      "test"
     ]
   },
   "optionalDependencies": {
