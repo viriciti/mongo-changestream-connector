@@ -84,7 +84,7 @@ class Connector
 
 			connection = @mongoClient
 
-		connection.removeAllListeners [ "close" ] if @throwHappy
+		connection.removeAllListeners "close" if @throwHappy
 
 		connection.close (error) =>
 			return cb? error if error
